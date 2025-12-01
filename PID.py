@@ -17,10 +17,11 @@ class PID:
         self.Kd = Kd  # Derivative gain
         self.setpoint = setpoint
 
-        self._prev_time = time.time()
+        self._prev_time = time.perf_counter()
         self._prev_error = 0.0
         self._integral = 0.0
-        self._integral_limit = 0.0
+        self._derivative = 0.0
+        self._integral_limit = None
 
     def update(self, measured_value):
         """
@@ -37,7 +38,7 @@ class PID:
             The output of the PID controller.
         """
         # Calculate time difference dt
-        current_time = time.time()
+        current_time = time.perf_counter()
         dt = current_time - self._prev_time
         self._prev_time = current_time
 
@@ -45,21 +46,22 @@ class PID:
         error = self.setpoint - measured_value
 
         # Calculate the integral (see https://en.wikipedia.org/wiki/Trapezoidal_rule)
-        self._integral += error * dt
-        if self._integral > self._integral_limit:
-            self._integral = self._integral_limit
-        elif self._integral < -self._integral_limit:
-            self._integral = -self._integral_limit
+        self._integral += 0.5 * (error + self._prev_error) * dt
+        if self._integral_limit is not None:
+            if self._integral > self._integral_limit:
+                self._integral = self._integral_limit
+            elif self._integral < -self._integral_limit:
+                self._integral = -self._integral_limit
 
         # Calculate the derivative (see https://en.wikipedia.org/wiki/Finite_difference)
         if dt > 0:
-            derivative = (error - self._prev_error) / dt
+            self._derivative = (error - self._prev_error) / dt
         else:
-            derivative = 0
+            self._derivative = 0
 
         # Calculate the output
         output = (self.Kp * error) + (self.Ki * self._integral) + \
-            (self.Kd * derivative)
+            (self.Kd * self._derivative)
         self._prev_error = error
 
         return output
@@ -76,14 +78,10 @@ class PID:
     def set_setpoint(self, setpoint):
         self.setpoint = setpoint
 
-    def get_setpoint(self):
-        return self.setpoint
-
     def set_integral_limit(self, limit):
         self._integral_limit = limit
 
     def reset_PID(self):
-        self.setpoint = 0
-        self._prev_time = time.time()
+        self._prev_time = time.perf_counter()
         self._prev_error = 0.0
         self._integral = 0.0
