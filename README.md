@@ -1,2 +1,3 @@
 # PID
-Simple Python implementation of PID algorithm
+
+Simple C++ and Python implementation of the PID algorithm
