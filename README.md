@@ -8,7 +8,7 @@ The controller output is computed as:
 
 ```math
 \text{output} = K_p \cdot \text{error} + K_i \cdot \text{integral} + K_d \cdot \text{derivative}
-````
+```
 
 Where:
 
